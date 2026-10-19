@@ -4,6 +4,8 @@
 **Class:** ____________________  
 **Course:** Java Programming
 
+**Repository:** [Final Project JomNum Tech](https://github.com/Tevaada/Final_Project_JomNum_Tech)
+
 ## About the Project
 
 This is a Java console application for managing a small hotel. It can
@@ -211,61 +213,3 @@ multiple copies of the application against the same data folder.
 - `LocalDate` and date calculations
 - File I/O and try-with-resources
 - Modern arrow-style switch statements
-
-## Suggested Demonstration
-
-Before submitting, demonstrate that the program can:
-
-1. Add, view, update, and delete an unused room.
-2. Add, view, update, and delete a guest without bookings.
-3. Reject duplicate IDs and invalid values.
-4. Create and display a valid booking.
-5. Reject an overlapping booking.
-6. Allow an adjacent booking.
-7. Cancel a booking and reuse its dates.
-8. Protect referenced rooms and guests from deletion.
-9. Keep an old booking total after changing the room price.
-10. Save, restart, and reload all records and statuses.
-
-## Limitations
-
-- Console interface only
-- One local user at a time
-- No user accounts or permissions
-- No database or online booking
-- No payment, invoice, or refund processing
-- No direct booking-date editing
-- No automatic restriction on past check-in dates
-
-## Troubleshooting
-
-### `javac` is not recognized
-
-Install a JDK and make sure its `bin` directory is included in the
-system `PATH`.
-
-### Main class cannot be found
-
-Compile first and run both commands from the project root:
-
-```bash
-javac --release 17 -encoding UTF-8 -d out -sourcepath src src/Main.java
-java -cp out Main
-```
-
-### No bookings appear
-
-Register a guest and create a booking first. Also confirm that the
-application was started from the project root.
-
-### CSV data cannot be loaded
-
-Read the startup error to find the affected file or record. Do not
-delete or overwrite the files only to hide the error. Keep the backup
-files until the problem is understood.
-
-### Saving fails
-
-Check folder permissions and make sure another application has not
-locked the CSV files. The program does not report a successful save
-after a failure.
