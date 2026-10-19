@@ -1,1 +1,2 @@
 bookingId,guestId,roomNumber,checkIn,checkOut,pricePerNight,cancelled
+B01,B01,001,2026-11-23,2026-11-24,25.0,true

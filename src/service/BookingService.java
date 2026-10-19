@@ -199,6 +199,22 @@ public class BookingService {
         booking.cancel();
     }
 
+    public void deleteCancelledBooking(String bookingId) {
+        Booking booking = findBooking(bookingId);
+
+        if (booking == null) {
+            throw new BookingException("Booking not found.");
+        }
+
+        if (!booking.isCancelled()) {
+            throw new BookingException(
+                "Only cancelled bookings can be deleted."
+            );
+        }
+
+        bookings.remove(booking);
+    }
+
     public boolean hasBookingsForRoom(String roomNumber) {
         for (Booking booking : bookings) {
             if (booking.getRoom().getRoomNumber()

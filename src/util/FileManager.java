@@ -9,16 +9,12 @@ import service.GuestService;
 import service.RoomService;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public final class FileManager {
 
@@ -30,9 +26,6 @@ public final class FileManager {
         DATA_DIRECTORY.resolve("guests.csv");
     private static final Path BOOKINGS_FILE =
         DATA_DIRECTORY.resolve("bookings.csv");
-    private static final Path SAVE_MARKER =
-        DATA_DIRECTORY.resolve(".save-pending");
-
     private static final List<String> ROOM_HEADER = List.of(
         "roomNumber", "type", "pricePerNight"
     );
@@ -50,7 +43,6 @@ public final class FileManager {
     public static HotelData load() throws IOException {
 
         Files.createDirectories(DATA_DIRECTORY);
-        recoverInterruptedSave();
 
         boolean roomsExist = Files.exists(ROOMS_FILE);
         boolean guestsExist = Files.exists(GUESTS_FILE);
@@ -86,71 +78,10 @@ public final class FileManager {
         }
 
         Files.createDirectories(DATA_DIRECTORY);
-        recoverInterruptedSave();
 
-        Path roomsTemporary = Files.createTempFile(
-            DATA_DIRECTORY, "rooms-", ".tmp"
-        );
-        Path guestsTemporary = Files.createTempFile(
-            DATA_DIRECTORY, "guests-", ".tmp"
-        );
-        Path bookingsTemporary = Files.createTempFile(
-            DATA_DIRECTORY, "bookings-", ".tmp"
-        );
-
-        boolean markerCreated = false;
-        boolean roomsExisted = Files.exists(ROOMS_FILE);
-        boolean guestsExisted = Files.exists(GUESTS_FILE);
-        boolean bookingsExisted = Files.exists(BOOKINGS_FILE);
-
-        try {
-            CsvUtil.write(roomsTemporary, roomRecords(hotelData));
-            CsvUtil.write(guestsTemporary, guestRecords(hotelData));
-            CsvUtil.write(bookingsTemporary, bookingRecords(hotelData));
-
-            // Read all temporary files back before replacing live data.
-            loadCsvData(
-                roomsTemporary, guestsTemporary, bookingsTemporary
-            );
-
-            prepareBackup(ROOMS_FILE, roomsExisted);
-            prepareBackup(GUESTS_FILE, guestsExisted);
-            prepareBackup(BOOKINGS_FILE, bookingsExisted);
-
-            writeSaveMarker(
-                roomsExisted, guestsExisted, bookingsExisted
-            );
-            markerCreated = true;
-
-            moveReplacing(roomsTemporary, ROOMS_FILE);
-            moveReplacing(guestsTemporary, GUESTS_FILE);
-            moveReplacing(bookingsTemporary, BOOKINGS_FILE);
-
-            Files.delete(SAVE_MARKER);
-            markerCreated = false;
-        } catch (Exception saveFailure) {
-            IOException failure = toIOException(
-                "Could not save a complete CSV dataset.", saveFailure
-            );
-
-            if (markerCreated || Files.exists(SAVE_MARKER)) {
-                try {
-                    rollback(
-                        roomsExisted, guestsExisted, bookingsExisted
-                    );
-                    Files.deleteIfExists(SAVE_MARKER);
-                    markerCreated = false;
-                } catch (IOException rollbackFailure) {
-                    failure.addSuppressed(rollbackFailure);
-                }
-            }
-
-            throw failure;
-        } finally {
-            Files.deleteIfExists(roomsTemporary);
-            Files.deleteIfExists(guestsTemporary);
-            Files.deleteIfExists(bookingsTemporary);
-        }
+        CsvUtil.write(ROOMS_FILE, roomRecords(hotelData));
+        CsvUtil.write(GUESTS_FILE, guestRecords(hotelData));
+        CsvUtil.write(BOOKINGS_FILE, bookingRecords(hotelData));
     }
 
     private static HotelData loadCsvData(
@@ -387,159 +318,4 @@ public final class FileManager {
         return records;
     }
 
-    private static void prepareBackup(Path liveFile, boolean existed)
-            throws IOException {
-
-        Path backupFile = backupFileFor(liveFile);
-
-        if (existed) {
-            if (!Files.isRegularFile(liveFile)) {
-                throw new IOException(
-                    liveFile.getFileName() + " is not a regular file."
-                );
-            }
-
-            Files.copy(
-                liveFile,
-                backupFile,
-                StandardCopyOption.REPLACE_EXISTING
-            );
-        } else {
-            Files.deleteIfExists(backupFile);
-        }
-    }
-
-    private static void writeSaveMarker(
-            boolean roomsExisted,
-            boolean guestsExisted,
-            boolean bookingsExisted) throws IOException {
-
-        Path markerTemporary = Files.createTempFile(
-            DATA_DIRECTORY, "save-marker-", ".tmp"
-        );
-
-        try {
-            String markerText =
-                "rooms.csv=" + roomsExisted + System.lineSeparator()
-                + "guests.csv=" + guestsExisted + System.lineSeparator()
-                + "bookings.csv=" + bookingsExisted
-                + System.lineSeparator();
-
-            Files.writeString(
-                markerTemporary,
-                markerText,
-                StandardCharsets.UTF_8
-            );
-            moveReplacing(markerTemporary, SAVE_MARKER);
-        } finally {
-            Files.deleteIfExists(markerTemporary);
-        }
-    }
-
-    private static void recoverInterruptedSave() throws IOException {
-        if (!Files.exists(SAVE_MARKER)) {
-            return;
-        }
-
-        Properties state = new Properties();
-
-        try (java.io.BufferedReader reader = Files.newBufferedReader(
-                SAVE_MARKER, StandardCharsets.UTF_8)) {
-            state.load(reader);
-        }
-
-        boolean roomsExisted = markerBoolean(state, "rooms.csv");
-        boolean guestsExisted = markerBoolean(state, "guests.csv");
-        boolean bookingsExisted = markerBoolean(state, "bookings.csv");
-
-        rollback(roomsExisted, guestsExisted, bookingsExisted);
-        Files.delete(SAVE_MARKER);
-        System.out.println(
-            "Recovered the previous complete dataset after an "
-            + "interrupted save."
-        );
-    }
-
-    private static boolean markerBoolean(
-            Properties state, String key) throws IOException {
-
-        String value = state.getProperty(key);
-
-        if ("true".equals(value)) {
-            return true;
-        }
-
-        if ("false".equals(value)) {
-            return false;
-        }
-
-        throw new IOException(
-            "The save recovery marker is damaged. No recovery was "
-            + "attempted."
-        );
-    }
-
-    private static void rollback(
-            boolean roomsExisted,
-            boolean guestsExisted,
-            boolean bookingsExisted) throws IOException {
-
-        restoreOne(ROOMS_FILE, roomsExisted);
-        restoreOne(GUESTS_FILE, guestsExisted);
-        restoreOne(BOOKINGS_FILE, bookingsExisted);
-    }
-
-    private static void restoreOne(Path liveFile, boolean existed)
-            throws IOException {
-
-        if (existed) {
-            Path backupFile = backupFileFor(liveFile);
-
-            if (!Files.isRegularFile(backupFile)) {
-                throw new IOException(
-                    "Cannot recover " + liveFile.getFileName()
-                    + " because its backup is missing."
-                );
-            }
-
-            Files.copy(
-                backupFile,
-                liveFile,
-                StandardCopyOption.REPLACE_EXISTING
-            );
-        } else {
-            Files.deleteIfExists(liveFile);
-        }
-    }
-
-    private static Path backupFileFor(Path liveFile) {
-        return liveFile.resolveSibling(
-            liveFile.getFileName().toString() + ".bak"
-        );
-    }
-
-    private static void moveReplacing(Path source, Path destination)
-            throws IOException {
-
-        try {
-            Files.move(
-                source,
-                destination,
-                StandardCopyOption.REPLACE_EXISTING,
-                StandardCopyOption.ATOMIC_MOVE
-            );
-        } catch (AtomicMoveNotSupportedException e) {
-            Files.move(
-                source,
-                destination,
-                StandardCopyOption.REPLACE_EXISTING
-            );
-        }
-    }
-
-    private static IOException toIOException(
-            String message, Exception cause) {
-
-        return new IOException(message + " " + cause.getMessage(), cause);
-    }
 }

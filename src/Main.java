@@ -70,7 +70,9 @@ public class Main {
                 }
             }
 
-            case "4" -> bookingService.viewBookings();
+            case "4" -> manageBookingHistory(
+                scanner, bookingService, hotelData
+            );
 
             case "5" -> {
                 if (cancelBooking(scanner, bookingService)) {
@@ -334,6 +336,60 @@ public class Main {
         } catch (BookingException | IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
             return false;
+        }
+    }
+
+    // ==================== BOOKING HISTORY ====================
+
+    private static void manageBookingHistory(
+            Scanner scanner,
+            BookingService bookingService,
+            HotelData hotelData) {
+
+        boolean viewing = true;
+
+        while (viewing) {
+            System.out.println("\n===== BOOKING HISTORY =====");
+            bookingService.viewBookings();
+            System.out.println("\n1. Delete Cancelled Booking");
+            System.out.println("0. Back to Main Menu");
+            System.out.print("Choose an option: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1" -> {
+                    try {
+                        System.out.print("Booking ID: ");
+                        String bookingId = scanner.nextLine().trim();
+
+                        System.out.print(
+                            "Type DELETE to permanently remove it: "
+                        );
+                        String confirmation = scanner.nextLine().trim();
+
+                        if (confirmation.equalsIgnoreCase("DELETE")) {
+                            bookingService.deleteCancelledBooking(
+                                bookingId
+                            );
+                            System.out.println(
+                                "Cancelled booking deleted permanently."
+                            );
+                            saveData(hotelData, false);
+                        } else {
+                            System.out.println("Deletion cancelled.");
+                        }
+                    } catch (BookingException e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                }
+
+                case "0" -> viewing = false;
+
+                default -> System.out.println(
+                    "Please choose 0 or 1."
+                );
+            }
         }
     }
 

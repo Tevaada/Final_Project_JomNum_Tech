@@ -1,48 +1,49 @@
 # Hotel Booking System
 
-**Project Name** Hotel Booking System 
+A Java console application for managing rooms, guests, and hotel
+bookings. The system applies booking rules, calculates stay costs, and
+stores its data in human-readable CSV files.
 
-**Course:** Java Programming
+[View the GitHub repository](https://github.com/Tevaada/Final_Project_JomNum_Tech)
 
-**Repository:** [Final Project JomNum Tech](https://github.com/Tevaada/Final_Project_JomNum_Tech)
+## Overview
 
-## About the Project
+The application provides a menu-driven interface for common hotel
+booking tasks. It supports room and guest management, booking conflict
+detection, cancellations, booking-history removal, and persistent CSV
+storage.
 
-This is a Java console application for managing a small hotel. It can
-manage rooms and guests, create bookings, prevent booking conflicts,
-calculate booking totals, and save data in CSV files.
+The project is written for JDK 17 and uses only the Java standard
+library.
 
-The project uses only the Java standard library and is compatible with
-JDK 17.
+## Features
 
-## Main Features
+### Room Management
 
-### Rooms
+- Add Standard and Deluxe rooms
+- View room details and nightly prices
+- Update room prices
+- Delete rooms that are not referenced by a booking
+- Reject duplicate room numbers and invalid prices
 
-- Add Standard and Deluxe rooms.
-- View room information and prices.
-- Update a room's nightly price.
-- Delete a room if it has never been used in a booking.
-- Reject duplicate room numbers and invalid prices.
+### Guest Management
 
-### Guests
+- Register and view guests
+- Update guest names and phone numbers
+- Delete guests that are not referenced by a booking
+- Reject duplicate guest IDs and invalid phone numbers
 
-- Add and view guests.
-- Update guest names and phone numbers.
-- Delete a guest if the guest has no booking history.
-- Reject duplicate guest IDs and invalid phone numbers.
+### Booking Management
 
-### Bookings
-
-- Create a booking for an existing guest and room.
-- View confirmed and cancelled bookings.
-- Cancel a booking without deleting its history.
-- Calculate the number of nights and total price.
-- Prevent two confirmed bookings from using the same room on
-  overlapping dates.
-- Allow a new booking to begin on another booking's checkout date.
-- Allow cancelled dates to be booked again.
-- Keep the original booked price if the room price changes later.
+- Create bookings for registered guests and existing rooms
+- View confirmed and cancelled bookings
+- Prevent overlapping confirmed bookings for the same room
+- Allow a new stay to begin on another booking's checkout date
+- Calculate the number of nights and total cost
+- Preserve the nightly price agreed when the booking was created
+- Cancel bookings while keeping their history
+- Permanently delete cancelled booking history from option 4
+- Reuse dates released by a cancelled booking
 
 ## Project Structure
 
@@ -51,61 +52,75 @@ Final_Assigment/
 ├── data/
 │   ├── rooms.csv
 │   ├── guests.csv
-│   ├── bookings.csv
-│   └── *.csv.bak
+│   └── bookings.csv
 ├── src/
 │   ├── exception/
+│   │   └── BookingException.java
 │   ├── model/
+│   │   ├── Booking.java
+│   │   ├── DeluxeRoom.java
+│   │   ├── Guest.java
+│   │   ├── HotelData.java
+│   │   ├── Room.java
+│   │   └── StandardRoom.java
 │   ├── repository/
+│   │   └── Repository.java
 │   ├── service/
+│   │   ├── BookingService.java
+│   │   ├── GuestService.java
+│   │   └── RoomService.java
 │   ├── util/
+│   │   ├── CsvUtil.java
+│   │   └── FileManager.java
 │   └── Main.java
+├── .gitignore
 └── README.md
 ```
 
-| Location | Purpose |
+### Package Responsibilities
+
+| Package | Responsibility |
 | --- | --- |
-| `src/Main.java` | Menus, input, and application flow |
-| `src/model/` | Room, guest, booking, and hotel data classes |
-| `src/service/` | Room, guest, and booking logic |
-| `src/repository/` | Generic `Repository<T>` storage |
-| `src/exception/` | Custom booking exception |
-| `src/util/` | CSV parsing, loading, saving, and recovery |
-| `data/` | Active data and recovery backups |
+| `model` | Represents rooms, guests, bookings, and application data |
+| `service` | Contains room, guest, and booking business logic |
+| `repository` | Provides reusable generic storage with `Repository<T>` |
+| `exception` | Defines booking-specific errors |
+| `util` | Parses CSV and loads or saves application data |
+| `Main` | Handles menus, user input, and application flow |
 
 ## Requirements
 
 - JDK 17 or newer
-- A terminal or an IDE such as VS Code
+- A terminal or Java IDE
 
-Check that Java is installed:
+Confirm that Java is installed:
 
 ```bash
 java -version
 javac -version
 ```
 
-## Compile and Run
+## Build and Run
 
-Open a terminal in the project root, where the `src` and `data`
-folders are located.
+Open a terminal in the project root—the directory containing `src`
+and `data`.
 
-Compile:
+Compile the application:
 
 ```bash
 javac --release 17 -encoding UTF-8 -d out -sourcepath src src/Main.java
 ```
 
-Run:
+Run the application:
 
 ```bash
 java -cp out Main
 ```
 
-Always run the application from the project root so it uses the
-correct `data` folder.
+Run the program from the same project root each time so it uses the
+correct `data` directory.
 
-## Menu
+## Application Menu
 
 ```text
 1. Manage Rooms
@@ -116,100 +131,96 @@ correct `data` folder.
 0. Save and Exit
 ```
 
-To create a booking:
+Option 4 displays the complete booking history and provides this
+submenu:
 
-1. Add a guest from **Manage Guests**.
-2. Add a room or use one of the existing rooms.
+```text
+1. Delete Cancelled Booking
+0. Back to Main Menu
+```
+
+A booking must first be cancelled through option 5. Permanent history
+deletion then requires the booking ID and the confirmation word
+`DELETE`.
+
+## Typical Booking Workflow
+
+1. Register a guest through **Manage Guests**.
+2. Add a room or select an existing room.
 3. Choose **Create Booking**.
 4. Enter a unique booking ID, guest ID, and room number.
-5. Enter dates using `YYYY-MM-DD`.
+5. Enter the check-in and checkout dates in `YYYY-MM-DD` format.
+6. View the booking through option 4.
 
-Example:
+Example calculation:
 
 ```text
-Room price: $40.00 per night
-Check-in:  2026-11-20
-Check-out: 2026-11-23
-Nights:    3
-Total:     $120.00
+Nightly price: $40.00
+Check-in:     2026-11-20
+Check-out:    2026-11-23
+Nights:       3
+Total:        $120.00
 ```
 
-## Booking Rules
+## Business Rules
 
-- Booking IDs, guest IDs, and room numbers must be unique.
-- A booking requires an existing guest and room.
+- Room numbers, guest IDs, and booking IDs must be unique.
+- A booking requires an existing room and guest.
 - Checkout must be after check-in.
 - Confirmed bookings for the same room cannot overlap.
-- Checkout and the next check-in may be on the same date.
-- Cancelled bookings do not block the room.
-- A booking keeps the nightly price agreed when it was created.
-- Rooms and guests referenced by booking history cannot be deleted.
+- Checkout and the next check-in may occur on the same date.
+- Cancelled bookings do not block room availability.
+- Only cancelled bookings can be permanently deleted.
+- Each booking retains its original nightly price.
+- A referenced room or guest cannot be deleted.
+- After all related booking history is permanently deleted, the room
+  or guest may also be deleted.
 
-The application does not prevent bookings with past dates. It only
-checks that checkout is after check-in and that the room is available.
+The system accepts past booking dates. It validates the date order and
+room availability but does not restrict check-in to the current or a
+future date.
 
-## CSV Data
+## CSV Persistence
 
-The application stores data in three UTF-8 CSV files.
+Data is stored in three UTF-8 CSV files.
 
-### `data/rooms.csv`
+| File | Header |
+| --- | --- |
+| `data/rooms.csv` | `roomNumber,type,pricePerNight` |
+| `data/guests.csv` | `guestId,name,phone` |
+| `data/bookings.csv` | `bookingId,guestId,roomNumber,checkIn,checkOut,pricePerNight,cancelled` |
 
-```text
-roomNumber,type,pricePerNight
-```
+IDs and phone numbers are stored as strings, which preserves leading
+zeros. Dates use ISO format (`YYYY-MM-DD`), and prices use a
+locale-independent number format.
 
-### `data/guests.csv`
+The CSV parser correctly handles commas, quotation marks, empty
+fields, and quoted multiline values. During loading, the application:
 
-```text
-guestId,name,phone
-```
+1. Validates each CSV header and record.
+2. Loads rooms and guests before bookings.
+3. Reconnects each booking to its matching room and guest.
+4. Rejects duplicate IDs, missing references, invalid values, and
+   overlapping confirmed bookings.
 
-### `data/bookings.csv`
+If none of the CSV files exists, the application creates all three and
+adds sample rooms 101, 102, and 201. If only some files exist, startup
+stops instead of creating a mixed dataset.
 
-```text
-bookingId,guestId,roomNumber,checkIn,checkOut,pricePerNight,cancelled
-```
-
-IDs and phone numbers are stored as text, so leading zeros are kept.
-Dates use the ISO `YYYY-MM-DD` format. Numbers are stored in a
-locale-independent format.
-
-The CSV reader supports commas, quotation marks, empty fields, and
-quoted multiline fields. It validates headers and records instead of
-silently ignoring damaged data.
-
-Rooms and guests are loaded before bookings. Each loaded booking is
-reconnected to its matching guest and room.
-
-## Saving and Recovery
-
-The application saves after every successful change and again when
-**Save and Exit** is selected.
-
-During a save, it:
-
-1. Writes all three datasets to temporary files.
-2. Reads the temporary files back to validate them.
-3. Creates `.csv.bak` backups of the current files.
-4. Uses a `.save-pending` marker while replacing the files.
-5. Restores the previous complete dataset if replacement fails.
-
-Replacing three files is not one atomic operation, so the backups and
-recovery marker prevent a partially saved dataset from being accepted.
-
-Do not delete `.csv.bak` or `.save-pending` files manually. Do not run
-multiple copies of the application against the same data folder.
+The application saves after each successful change and when **Save and
+Exit** is selected. If writing fails, it displays an error and does not
+report a successful save.
 
 ## Java Concepts Demonstrated
 
 - Classes and objects
-- Encapsulation and validation
-- Inheritance through `StandardRoom` and `DeluxeRoom`
+- Encapsulation and input validation
+- Inheritance with `StandardRoom` and `DeluxeRoom`
 - Abstraction through the abstract `Room` class
 - Polymorphism through `Room` references
-- Generics through `Repository<T>`
+- Generics with `Repository<T>`
 - `ArrayList` and `HashMap` collections
-- Custom exceptions and error handling
+- Custom exceptions and exception handling
 - `LocalDate` and date calculations
-- File I/O and try-with-resources
-- Modern arrow-style switch statements
+- UTF-8 file I/O and try-with-resources
+- Arrow-style switch expressions
