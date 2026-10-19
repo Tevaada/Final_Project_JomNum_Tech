@@ -1,7 +1,7 @@
 # Hotel Booking System
 
-**Project Name:** Hotel Booking System 
- 
+**Project Name** Hotel Booking System 
+
 **Course:** Java Programming
 
 **Repository:** [Final Project JomNum Tech](https://github.com/Tevaada/Final_Project_JomNum_Tech)
