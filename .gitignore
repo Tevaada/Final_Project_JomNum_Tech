@@ -1,0 +1,7 @@
+out/
+*.class
+.idea/
+.vscode/
+data/*.bak
+data/*.tmp
+data/.save-pending
